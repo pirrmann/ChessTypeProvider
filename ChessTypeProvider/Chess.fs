@@ -38,7 +38,7 @@ type Square =
 
 let toAlgebraic =
     let letters = "ABCDEFGH".ToCharArray()
-    fun (rank, line) -> sprintf "%c%d" letters.[line] (rank+1)
+    fun (rank, line) -> sprintf "%c%d" letters.[line] (rank + 1)
 
 type Game =
     {
@@ -66,25 +66,87 @@ type Game =
         else
             None
     member private this.GetAvailableMoves(rank, file) =
+        let checkMove side x y =
+            if !side then
+                let cell = this.TryGet(rank + x,file + y)
+                let move = match cell with
+                           | Some(White _) | None -> Seq.empty
+                           | _ -> seq { yield (x, y) }
+                side := cell = Some Empty
+                move
+            else
+                Seq.empty
         if not this.IsWhiteTurn then
             failwith "This method is only intended to be called for white player"
         else
             seq {
-                // Now I 'only' need to implement every chess move
                 match this.Squares.[rank].[file] with
                 | White Pawn ->
-                    if this.TryGet(rank+1,file) = Some Empty then
+                    if this.TryGet(rank + 1,file) = Some Empty then
                         yield 1, 0
-                        if rank = 1 && this.TryGet(rank+2,file) = Some Empty then
+                        if rank = 1 && this.TryGet(rank + 2,file) = Some Empty then
                             yield 2, 0
-                    match this.TryGet(rank+1,file-1) with
+                    match this.TryGet(rank + 1,file - 1) with
                     | Some(Black _) -> yield 1, -1
                     | _ -> ()
-                    match this.TryGet(rank+1,file+1) with
+                    match this.TryGet(rank + 1,file + 1) with
                     | Some(Black _) -> yield 1, 1
                     | _ -> ()
-
-                | _ -> ()
+                | White Knight ->
+                    for x in -1..2..1 do
+                        for y in -2..4..2 do
+                            match this.TryGet(rank + x,file + y) with
+                            | Some(Black _) | Some Empty -> yield x, y
+                            | _ -> ()
+                            match this.TryGet(rank + y,file + x) with
+                            | Some(Black _) | Some Empty -> yield y, x
+                            | _ -> ()
+                | White King ->
+                    for x in -1..1 do
+                        for y in -1..1 do
+                            if x <> 0 || y <> 0 then
+                                match this.TryGet(rank + x,file + y) with
+                                | Some(Black _) | Some Empty -> yield x, y
+                                | _ -> ()
+                | White Rook ->
+                    let right = ref true
+                    let left = ref true
+                    let down = ref true
+                    let up = ref true
+                    for x in 1..7 do
+                        yield! checkMove right x  0
+                        yield! checkMove left -x  0
+                        yield! checkMove down  0  x
+                        yield! checkMove up    0 -x
+                | White Bishop ->
+                    let downright = ref true
+                    let donlleft = ref true
+                    let upright = ref true
+                    let upleft = ref true
+                    for x in 1..7 do
+                        yield! checkMove downright x  x
+                        yield! checkMove donlleft -x  x
+                        yield! checkMove upright   x -x
+                        yield! checkMove upleft   -x -x
+                | White Queen ->
+                    let right = ref true
+                    let left = ref true
+                    let down = ref true
+                    let up = ref true
+                    let downright = ref true
+                    let donlleft = ref true
+                    let upright = ref true
+                    let upleft = ref true
+                    for x in 1..7 do
+                        yield! checkMove right     x  0
+                        yield! checkMove left     -x  0
+                        yield! checkMove down      0  x
+                        yield! checkMove up        0 -x
+                        yield! checkMove downright x  x
+                        yield! checkMove donlleft -x  x
+                        yield! checkMove upright   x -x
+                        yield! checkMove upleft   -x -x
+                | Black _ | Empty -> ()
             }
     member this.Mirrored =    
             {
