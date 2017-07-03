@@ -66,16 +66,15 @@ type Game =
         else
             None
     member private this.GetAvailableMoves(rank, file) =
-        let checkMove side x y =
-            if !side then
-                let cell = this.TryGet(rank + x,file + y)
-                let move = match cell with
-                           | Some(White _) | None -> Seq.empty
-                           | _ -> seq { yield (x, y) }
-                side := cell = Some Empty
-                move
-            else
-                Seq.empty
+        let checkMove x y =
+            let rec checkMove accx accy =
+                seq {
+                    match this.TryGet(rank + accx,file + accy) with
+                    | Some(White _) | None -> ()
+                    | _ -> yield (accx, accy)
+                           yield! checkMove (accx + x) (accy + y)
+                }
+            checkMove x y
         if not this.IsWhiteTurn then
             failwith "This method is only intended to be called for white player"
         else
@@ -109,43 +108,24 @@ type Game =
                                 | Some(Black _) | Some Empty -> yield x, y
                                 | _ -> ()
                 | White Rook ->
-                    let right = ref true
-                    let left = ref true
-                    let down = ref true
-                    let up = ref true
-                    for x in 1..7 do
-                        yield! checkMove right x  0
-                        yield! checkMove left -x  0
-                        yield! checkMove down  0  x
-                        yield! checkMove up    0 -x
+                    yield! checkMove  1  0
+                    yield! checkMove -1  0
+                    yield! checkMove  0  1
+                    yield! checkMove  0 -1
                 | White Bishop ->
-                    let downright = ref true
-                    let donlleft = ref true
-                    let upright = ref true
-                    let upleft = ref true
-                    for x in 1..7 do
-                        yield! checkMove downright x  x
-                        yield! checkMove donlleft -x  x
-                        yield! checkMove upright   x -x
-                        yield! checkMove upleft   -x -x
+                    yield! checkMove  1  1
+                    yield! checkMove -1  1
+                    yield! checkMove  1 -1
+                    yield! checkMove -1 -1
                 | White Queen ->
-                    let right = ref true
-                    let left = ref true
-                    let down = ref true
-                    let up = ref true
-                    let downright = ref true
-                    let donlleft = ref true
-                    let upright = ref true
-                    let upleft = ref true
-                    for x in 1..7 do
-                        yield! checkMove right     x  0
-                        yield! checkMove left     -x  0
-                        yield! checkMove down      0  x
-                        yield! checkMove up        0 -x
-                        yield! checkMove downright x  x
-                        yield! checkMove donlleft -x  x
-                        yield! checkMove upright   x -x
-                        yield! checkMove upleft   -x -x
+                    yield! checkMove  1  0
+                    yield! checkMove -1  0
+                    yield! checkMove  0  1
+                    yield! checkMove  0 -1
+                    yield! checkMove  1  1
+                    yield! checkMove -1  1
+                    yield! checkMove  1 -1
+                    yield! checkMove -1 -1
                 | Black _ | Empty -> ()
             }
     member this.Mirrored =    
