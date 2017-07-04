@@ -44,6 +44,7 @@ type Game =
     {
         Squares: Square array array
         IsWhiteTurn: bool
+        Moves: (Game * Square * int * int * int * int) list
     } with
     static member Start =
             {
@@ -59,6 +60,7 @@ type Game =
                         [| Pawn ; Pawn  ; Pawn  ; Pawn ; Pawn ; Pawn  ; Pawn  ; Pawn  |] |> Array.map Black
                         [| Rook ; Knight; Bishop; Queen; King ; Bishop; Knight; Rook  |] |> Array.map Black
                     |]
+                Moves = []
             }
     member private this.TryGet(rank, file) =
         if rank >= 0 && rank <=7 && file >= 0 && file <= 7 then
@@ -91,6 +93,10 @@ type Game =
                     match this.TryGet(rank + 1,file + 1) with
                     | Some(Black _) -> yield 1, 1
                     | _ -> ()
+                    if rank = 4 then
+                        match this.Moves with
+                        | (_, Black Pawn, 6, y, 4, _)::_ when abs (y - file) = 1 -> yield 1, y - file
+                        | _ -> ()
                 | White Knight ->
                     for x in -1..2..1 do
                         for y in -2..4..2 do
@@ -132,6 +138,7 @@ type Game =
             {
                 IsWhiteTurn = not this.IsWhiteTurn
                 Squares = this.Squares |> Array.rev |> Array.map (Array.map (fun p -> p.Mirrored))
+                Moves = this.Moves |> List.map (fun (game,square,startRank,startFile,targetRank,targetFile) -> game.Mirrored, square.Mirrored, 7 - startRank, startFile, 7 - targetRank, targetFile)
             }
     member this.NextMoves =
         seq {
@@ -143,12 +150,21 @@ type Game =
                     let targetRank, targetFile = (if this.IsWhiteTurn then startRank + rankChange else startRank - rankChange), file + fileChange
                     let movedPiece = this.Squares.[startRank].[startFile]
                     let newSquares = this.Squares |> Array.map (Array.map id)
+                    match movedPiece with
+                    | White Pawn -> 
+                        if startRank = 4 && (abs (startFile - targetFile) = 1) && newSquares.[4].[targetFile] = Black Pawn  then
+                            newSquares.[4].[targetFile] <- Empty
+                    | Black Pawn -> 
+                        if startRank = 3 && (abs (startFile - targetFile) = 1) && newSquares.[3].[targetFile] = White Pawn  then
+                            newSquares.[3].[targetFile] <- Empty
+                    | _ -> ()
                     newSquares.[targetRank].[targetFile] <- movedPiece
                     newSquares.[startRank].[startFile] <- Empty
                     let newGame =
                         { this with
                             IsWhiteTurn = not this.IsWhiteTurn
                             Squares = newSquares
+                            Moves = (this, movedPiece, startRank, startFile, targetRank, targetFile)::this.Moves
                         }
                     yield sprintf "%O%s%s" movedPiece (toAlgebraic (startRank, startFile)) (toAlgebraic (targetRank, targetFile)), newGame
         }
