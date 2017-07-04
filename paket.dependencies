@@ -1,0 +1,4 @@
+source https://nuget.org/api/v2
+
+framework: net45
+nuget FSharp.Core

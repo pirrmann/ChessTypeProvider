@@ -1,0 +1,25 @@
+type project
+title
+    ChessTypeProvider
+owners
+    Pierre Irrmann
+authors 
+    Pierre Irrmann
+projectUrl
+    https://github.com/pirrmann/ChessTypeProvider
+iconUrl
+    https://raw.githubusercontent.com/pirrmann/ChessTypeProvider/master/docs/files/img/logo.png
+licenseUrl
+    https://github.com/pirrmann/ChessTypeProvider/blob/master/LICENSE.txt
+requireLicenseAcceptance
+    false
+copyright
+    Copyright 2017
+tags
+    chess type-provider fsharp
+summary
+    The amazing chess type provider
+description
+    The amazing chess type provider
+
+
